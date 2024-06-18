@@ -18,8 +18,12 @@ namespace Assets.__Game.Resources.Scripts.LevelItem
     [SerializeField] private AudioClip[] _loseAnnouncerClips;
     [SerializeField] private AudioClip[] _stuporAnnouncerClips;
 
+    private bool _questClipsArePlayed;
+
     private AudioSource _audioSource;
+
     private AudioTool _audioTool;
+
     private EventBinding<EventStructs.StateChanged> _stateEvent;
     private EventBinding<EventStructs.StuporEvent> _stuporEvent;
     private EventBinding<EventStructs.UiButtonEvent> _uiButtonEvent;
@@ -35,7 +39,7 @@ namespace Assets.__Game.Resources.Scripts.LevelItem
     {
       _stateEvent = new EventBinding<EventStructs.StateChanged>(PlayScreenSound);
       _stuporEvent = new EventBinding<EventStructs.StuporEvent>(PlayStuporSound);
-      //_uiButtonEvent = new EventBinding<EventStructs.UiButtonEvent>(PlayQuestClipsSequentially);
+      _uiButtonEvent = new EventBinding<EventStructs.UiButtonEvent>(PlayQuestClipsSequentially);
       _variantAudioClickedEvent = new EventBinding<EventStructs.VariantAudioClickedEvent>(PlayWordAudioCLip);
     }
 
@@ -43,7 +47,7 @@ namespace Assets.__Game.Resources.Scripts.LevelItem
     {
       _stateEvent.Remove(PlayScreenSound);
       _stuporEvent.Remove(PlayStuporSound);
-      //_uiButtonEvent.Remove(PlayQuestClipsSequentially);
+      _uiButtonEvent.Remove(PlayQuestClipsSequentially);
       _variantAudioClickedEvent.Remove(PlayWordAudioCLip);
     }
 
@@ -76,6 +80,10 @@ namespace Assets.__Game.Resources.Scripts.LevelItem
 
     public void PlayQuestClipsSequentially(EventStructs.UiButtonEvent uiButtonEvent)
     {
+      if (_questClipsArePlayed == true) return;
+
+      _questClipsArePlayed = true;
+
       if (uiButtonEvent.UiEnums == __Game.Scripts.Enums.UiEnums.QuestPlayButton)
         StartCoroutine(DoPlayClipsSequentially(_questClips));
     }

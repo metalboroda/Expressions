@@ -3,6 +3,7 @@ using Assets.__Game.Resources.Scripts._GameStuff;
 using Assets.__Game.Resources.Scripts.Game.States;
 using Assets.__Game.Resources.Scripts.SOs;
 using Assets.__Game.Scripts.Infrastructure;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -25,10 +26,13 @@ public class WordsManager : MonoBehaviour
   private HashSet<string> _correctValuesSet;
   private bool _canSubmit = true;
   private int _currentSubLevelIndex = 0;
+  private Coroutine _stuporTimeoutRoutine;
 
   private Canvas _canvas;
 
   private GameBootstrapper _gameBootstrapper;
+
+  private EventBinding<EventStructs.StateChanged> _stateChangedEvent;
 
   private void Awake()
   {
@@ -42,6 +46,13 @@ public class WordsManager : MonoBehaviour
   private void OnEnable()
   {
     _submitButton.onClick.AddListener(OnSubmitButtonClick);
+
+    _stateChangedEvent = new EventBinding<EventStructs.StateChanged>(StuporTimerDependsOnState);
+  }
+
+  private void OnDisable()
+  {
+    _stateChangedEvent.Remove(StuporTimerDependsOnState);
   }
 
   private void Start()
@@ -52,6 +63,7 @@ public class WordsManager : MonoBehaviour
     EventBus<EventStructs.QuestTextEvent>.Raise(new EventStructs.QuestTextEvent { QuestText = _correctText });
 
     ActivateSubLevel(_currentSubLevelIndex);
+    ResetAndStartStuporTimer();
   }
 
   private void OnSubmitButtonClick()
@@ -110,6 +122,8 @@ public class WordsManager : MonoBehaviour
     }
 
     EventBus<EventStructs.UiButtonEvent>.Raise(new EventStructs.UiButtonEvent());
+
+    ResetAndStartStuporTimer();
   }
 
   private void ActivateSubLevel(int index)
@@ -139,5 +153,33 @@ public class WordsManager : MonoBehaviour
         break;
       }
     }
+  }
+
+  private void StuporTimerDependsOnState(EventStructs.StateChanged stateChanged)
+  {
+    if (stateChanged.State is GameplayState)
+      ResetAndStartStuporTimer();
+    else
+    {
+      if (_stuporTimeoutRoutine != null)
+        StopCoroutine(_stuporTimeoutRoutine);
+    }
+  }
+
+  private void ResetAndStartStuporTimer()
+  {
+    if (_stuporTimeoutRoutine != null)
+      StopCoroutine(_stuporTimeoutRoutine);
+
+    _stuporTimeoutRoutine = StartCoroutine(DoStuporTimerCoroutine());
+  }
+
+  private IEnumerator DoStuporTimerCoroutine()
+  {
+    yield return new WaitForSeconds(10);
+
+    EventBus<EventStructs.StuporEvent>.Raise(new EventStructs.StuporEvent());
+
+    ResetAndStartStuporTimer();
   }
 }
